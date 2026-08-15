@@ -1,4 +1,13 @@
+# Ignore environment variable files containing secret API keys
 .env
+.env.local
+.env.*
+*.env
+
+# Python bytecode and virtual environments
 __pycache__/
 *.pyc
 .venv/
+venv/
+ENV/
+*.sqlite3
