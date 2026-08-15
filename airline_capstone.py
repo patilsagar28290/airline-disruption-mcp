@@ -113,30 +113,8 @@ def set_scenario_prompt(scenario_name):
     return ""
 
 
-# Dark theme CSS for premium dark mode aesthetic
-dark_css = """
-body, .gradio-container {
-    background-color: #0b0f19 !important;
-    color: #f1f5f9 !important;
-}
-.gr-box, .gr-form, .gr-panel, .gr-input, input, textarea, select {
-    background-color: #1e293b !important;
-    color: #f8fafc !important;
-    border-color: #334155 !important;
-}
-.gr-button-primary {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-}
-"""
-
-# Build Gradio UI Blocks with Dark Theme
-with gr.Blocks(
-    title="✈️ Airline Disruption & Alliance Interline MCP Control Panel",
-    theme=gr.themes.Soft(primary_hue="blue", neutral_hue="slate"),
-    css=dark_css,
-) as demo:
+# Build Gradio UI Blocks
+with gr.Blocks(title="✈️ Airline Disruption & Alliance Interline MCP Control Panel") as demo:
     gr.Markdown(
         "# ✈️ Airline Disruption Recovery & Alliance Interline MCP Control Panel\n"
         "**Demonstrating Model Context Protocol (MCP) in the Travel & Airline Domain.**\n\n"
