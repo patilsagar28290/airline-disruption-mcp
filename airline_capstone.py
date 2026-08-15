@@ -46,9 +46,8 @@ SYSTEM_PROMPT = (
     "You are the Airline Alliance Disruption Recovery Specialist AI.\n"
     "Your goal is to protect passengers whose flights have been cancelled by rebooking them onto partner airlines "
     "(Star Alliance, Oneworld, SkyTeam) instead of offering standard cancellations and refunds.\n"
-    "ALWAYS use the connected MCP tools to lookup PNRs, evaluate alliance alternatives, issue interline e-tickets, "
-    "reroute baggage tags, and grant welfare vouchers.\n"
-    "Reply clearly, professionally, and in plain text without markdown symbol clutter."
+    "Be concise and efficient. Call necessary tools promptly to perform rebooking, baggage transfer, and voucher issuance, "
+    "and provide a clear, professional summary without unnecessary delay."
 )
 
 
@@ -200,4 +199,4 @@ if __name__ == "__main__":
         asyncio.run(run_selftest())
     else:
         port = int(os.getenv("PORT", "7860"))
-        demo.launch(server_name="0.0.0.0", server_port=port)
+        demo.queue().launch(server_name="0.0.0.0", server_port=port)
