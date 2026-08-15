@@ -79,11 +79,16 @@ def issue_welfare_vouchers(pnr_code: str = "AI9482", layover_hours: float = 4.5)
     if not pnr:
         return f"PNR '{pnr_code}' not found."
 
+    try:
+        hours = float(layover_hours)
+    except (ValueError, TypeError):
+        hours = 4.5
+
     lounge_pass = f"STAR-LOUNGE-{random.randint(10000, 99999)}"
     meal_voucher = f"MEAL-USD50-{random.randint(1000, 9999)}"
     
     hotel_info = ""
-    if layover_hours >= 6.0:
+    if hours >= 6.0:
         hotel_info = f"\n  - Transit Hotel Stay Voucher: Airport Transit Hotel (Room Pass: H-{random.randint(100, 999)})"
 
     return (

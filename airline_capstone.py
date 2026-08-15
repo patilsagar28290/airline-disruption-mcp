@@ -42,12 +42,36 @@ SERVERS = {
     },
 }
 
+from langchain_core.tools import tool
+
+import airline_disruption_mcp
+import alliance_partner_mcp
+import passenger_welfare_mcp
+
+# High-performance in-memory tool wrappers for zero-overhead execution on Render
+IN_MEMORY_TOOLS = {
+    "PNR & Disruption Service": [
+        tool(airline_disruption_mcp.get_pnr_details),
+        tool(airline_disruption_mcp.get_disruption_report),
+        tool(airline_disruption_mcp.resolve_full_disruption_recovery),
+    ],
+    "Alliance Partner Engine": [
+        tool(alliance_partner_mcp.search_alliance_alternatives),
+        tool(alliance_partner_mcp.evaluate_rebooking_options),
+    ],
+    "Passenger Welfare & Interline E-Ticketing": [
+        tool(passenger_welfare_mcp.issue_interline_ticket),
+        tool(passenger_welfare_mcp.transfer_baggage_tags),
+        tool(passenger_welfare_mcp.issue_welfare_vouchers),
+    ],
+}
+
 SYSTEM_PROMPT = (
     "You are the Airline Alliance Disruption Recovery Specialist AI.\n"
     "Your goal is to protect passengers whose flights have been cancelled by rebooking them onto partner airlines "
     "(Star Alliance, Oneworld, SkyTeam) instead of offering standard cancellations and refunds.\n"
-    "CRITICAL PERFORMANCE INSTRUCTION: Call all required tools (get_pnr_details, get_disruption_report, search_alliance_alternatives, evaluate_rebooking_options, issue_interline_ticket, transfer_baggage_tags, issue_welfare_vouchers) IN PARALLEL in your very first turn.\n"
-    "Do not make sequential single-tool turns. Return a clear, professional passenger recovery summary immediately."
+    "CRITICAL PERFORMANCE INSTRUCTION: Execute required recovery tools IN PARALLEL in your very first turn.\n"
+    "Return a clear, professional passenger recovery summary immediately."
 )
 
 
@@ -57,14 +81,12 @@ def config_for(selected):
 
 
 async def discover(selected):
-    """Connect to checked servers and retrieve tools."""
-    if not selected:
-        return []
-    try:
-        client = MultiServerMCPClient(config_for(selected))
-        return await client.get_tools()
-    except Exception:
-        return []
+    """Retrieve tools for checked servers with zero-overhead in-memory execution."""
+    tools = []
+    for key in selected:
+        if key in IN_MEMORY_TOOLS:
+            tools.extend(IN_MEMORY_TOOLS[key])
+    return tools
 
 
 def tools_panel(tools):
@@ -72,8 +94,8 @@ def tools_panel(tools):
     if not tools:
         return "⚠️ **Connected MCP tools:** None — check an MCP server on the left panel to plug in tools."
     lines = [f"✅ **Connected MCP Tools ({len(tools)} plugged in):**"]
-    for tool in tools:
-        lines.append(f"- `{tool.name}`: {tool.description}")
+    for t in tools:
+        lines.append(f"- `{t.name}`: {t.description}")
     return "\n".join(lines)
 
 
@@ -95,10 +117,8 @@ async def on_message(message, history, selected):
         history.append((message, "⚠️ No MCP servers are plugged in. Please check at least one server on the left panel to provide tools to the agent."))
         return "", history, tools_panel([])
 
-    tools = []
+    tools = await discover(selected)
     try:
-        client = MultiServerMCPClient(config_for(selected))
-        tools = await client.get_tools()
         agent = create_agent(model="deepseek:deepseek-chat", tools=tools, system_prompt=SYSTEM_PROMPT)
         result = await agent.ainvoke({"messages": [{"role": "user", "content": message}]})
         last_msg = result["messages"][-1]

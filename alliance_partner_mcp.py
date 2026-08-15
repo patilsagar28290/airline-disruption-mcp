@@ -37,7 +37,7 @@ def search_alliance_alternatives(origin: str, destination: str, cabin_class: str
 
 
 @mcp.tool()
-def evaluate_rebooking_options(pnr_code: str = "AI9482"):
+def evaluate_rebooking_options(pnr_code: str = "AI9482", preferred_flight: str = ""):
     """Analyze and rank the best alternative itineraries for a disrupted PNR based on layover time, alliance compatibility, and seat availability."""
     pnr = airline_db.get_pnr(pnr_code)
     if not pnr:
