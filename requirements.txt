@@ -1,0 +1,7 @@
+mcp
+langchain
+langchain-deepseek
+langchain-mcp-adapters
+gradio
+python-dotenv
+requests
