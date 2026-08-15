@@ -22,17 +22,17 @@ load_dotenv()
 
 # Define available local MCP Servers
 SERVERS = {
-    "PNR & Disruption Service (local)": {
+    "PNR & Disruption Service": {
         "command": sys.executable,
         "args": ["airline_disruption_mcp.py"],
         "transport": "stdio",
     },
-    "Alliance Partner Engine (local)": {
+    "Alliance Partner Engine": {
         "command": sys.executable,
         "args": ["alliance_partner_mcp.py"],
         "transport": "stdio",
     },
-    "Passenger Welfare & Interline E-Ticketing (local)": {
+    "Passenger Welfare & Interline E-Ticketing": {
         "command": sys.executable,
         "args": ["passenger_welfare_mcp.py"],
         "transport": "stdio",
