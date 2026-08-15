@@ -173,7 +173,7 @@ with gr.Blocks(
 
         # Right Panel: Agent Chatbot Interface
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(type="messages", height=500, label="🤖 Alliance Disruption Recovery AI Agent")
+            chatbot = gr.Chatbot(height=500, label="🤖 Alliance Disruption Recovery AI Agent")
             message = gr.Textbox(
                 placeholder="e.g. Lookup PNR AI9482 and find Star Alliance alternative flights to London Heathrow",
                 label="Your Message / Instruction to Agent",
