@@ -110,11 +110,11 @@ def append_history(history, user_msg, bot_msg):
     if history is None:
         history = []
     new_hist = list(history)
-    if new_hist and isinstance(new_hist[0], (list, tuple)):
-        new_hist.append((user_msg, bot_msg))
-    else:
+    if new_hist and isinstance(new_hist[0], dict):
         new_hist.append({"role": "user", "content": user_msg})
         new_hist.append({"role": "assistant", "content": bot_msg})
+    else:
+        new_hist.append((user_msg, bot_msg))
     return new_hist
 
 
@@ -192,7 +192,7 @@ with gr.Blocks(title="✈️ Airline Disruption & Alliance Interline MCP Control
 
         # Right Panel: Agent Chatbot Interface
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(type="messages", height=500, label="🤖 Alliance Disruption Recovery AI Agent")
+            chatbot = gr.Chatbot(height=500, label="🤖 Alliance Disruption Recovery AI Agent")
             message = gr.Textbox(
                 placeholder="e.g. Lookup PNR AI9482 and find Star Alliance alternative flights to London Heathrow",
                 label="Your Message / Instruction to Agent",
