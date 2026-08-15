@@ -2,6 +2,6 @@ mcp
 langchain
 langchain-deepseek
 langchain-mcp-adapters
-gradio
+gradio>=5.0.0
 python-dotenv
 requests
