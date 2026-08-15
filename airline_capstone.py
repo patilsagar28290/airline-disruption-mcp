@@ -105,17 +105,27 @@ async def on_toggle(selected):
     return tools_panel(tools)
 
 
+def append_history(history, user_msg, bot_msg):
+    """Safely append user/assistant turn whether history uses OpenAI-style dicts or tuple pairs."""
+    if history is None:
+        history = []
+    new_hist = list(history)
+    if new_hist and isinstance(new_hist[0], (list, tuple)):
+        new_hist.append((user_msg, bot_msg))
+    else:
+        new_hist.append({"role": "user", "content": user_msg})
+        new_hist.append({"role": "assistant", "content": bot_msg})
+    return new_hist
+
+
 async def on_message(message, history, selected):
     """Process chat message using agent built with currently plugged-in tools."""
     if not message.strip():
         return "", history, gr.update()
 
-    if history is None:
-        history = []
-
     if not selected:
-        history.append((message, "⚠️ No MCP servers are plugged in. Please check at least one server on the left panel to provide tools to the agent."))
-        return "", history, tools_panel([])
+        new_hist = append_history(history, message, "⚠️ No MCP servers are plugged in. Please check at least one server on the left panel to provide tools to the agent.")
+        return "", new_hist, tools_panel([])
 
     tools = await discover(selected)
     try:
@@ -129,8 +139,8 @@ async def on_message(message, history, selected):
     except Exception as err:
         answer = f"⚠️ Error: {str(err)}\n\nPlease ensure your DEEPSEEK_API_KEY is set correctly in environment variables."
 
-    history.append((message, answer))
-    return "", history, tools_panel(tools)
+    new_hist = append_history(history, message, answer)
+    return "", new_hist, tools_panel(tools)
 
 
 def set_scenario_prompt(scenario_name):
@@ -182,7 +192,7 @@ with gr.Blocks(title="✈️ Airline Disruption & Alliance Interline MCP Control
 
         # Right Panel: Agent Chatbot Interface
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(height=500, label="🤖 Alliance Disruption Recovery AI Agent")
+            chatbot = gr.Chatbot(type="messages", height=500, label="🤖 Alliance Disruption Recovery AI Agent")
             message = gr.Textbox(
                 placeholder="e.g. Lookup PNR AI9482 and find Star Alliance alternative flights to London Heathrow",
                 label="Your Message / Instruction to Agent",
@@ -209,7 +219,12 @@ async def run_selftest():
     prompt = "Lookup PNR AI9482. Flight AI-101 is cancelled. Recommend alternative flights and issue interline ticket."
     _, history, _ = await on_message(prompt, [], all_servers)
     print("[TEST] Agent Answer:")
-    safe_answer = history[-1][1].encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
+    last_item = history[-1]
+    if isinstance(last_item, dict):
+        answer_text = last_item["content"]
+    else:
+        answer_text = last_item[1]
+    safe_answer = answer_text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
     print(safe_answer)
     print("[TEST] Self-Test Completed Successfully!")
 
