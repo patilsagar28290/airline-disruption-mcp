@@ -20,21 +20,24 @@ import gradio as gr
 
 load_dotenv()
 
+# Script directory for resolving relative server paths reliably
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Define available local MCP Servers
 SERVERS = {
     "PNR & Disruption Service": {
         "command": sys.executable,
-        "args": ["airline_disruption_mcp.py"],
+        "args": [os.path.join(SCRIPT_DIR, "airline_disruption_mcp.py")],
         "transport": "stdio",
     },
     "Alliance Partner Engine": {
         "command": sys.executable,
-        "args": ["alliance_partner_mcp.py"],
+        "args": [os.path.join(SCRIPT_DIR, "alliance_partner_mcp.py")],
         "transport": "stdio",
     },
     "Passenger Welfare & Interline E-Ticketing": {
         "command": sys.executable,
-        "args": ["passenger_welfare_mcp.py"],
+        "args": [os.path.join(SCRIPT_DIR, "passenger_welfare_mcp.py")],
         "transport": "stdio",
     },
 }
@@ -58,8 +61,11 @@ async def discover(selected):
     """Connect to checked servers and retrieve tools."""
     if not selected:
         return []
-    client = MultiServerMCPClient(config_for(selected))
-    return await client.get_tools()
+    try:
+        client = MultiServerMCPClient(config_for(selected))
+        return await client.get_tools()
+    except Exception:
+        return []
 
 
 def tools_panel(tools):
@@ -83,22 +89,28 @@ async def on_message(message, history, selected):
     if not message.strip():
         return "", history, gr.update()
 
+    if history is None:
+        history = []
+
     if not selected:
-        history = history + [
-            {"role": "user", "content": message},
-            {"role": "assistant", "content": "⚠️ No MCP servers are plugged in. Please check at least one server on the left panel to provide tools to the agent."},
-        ]
+        history.append((message, "⚠️ No MCP servers are plugged in. Please check at least one server on the left panel to provide tools to the agent."))
         return "", history, tools_panel([])
 
-    tools = await discover(selected)
-    agent = create_agent(model="deepseek:deepseek-chat", tools=tools, system_prompt=SYSTEM_PROMPT)
-    result = await agent.ainvoke({"messages": [{"role": "user", "content": message}]})
-    answer = result["messages"][-1].content.strip()
+    tools = []
+    try:
+        client = MultiServerMCPClient(config_for(selected))
+        tools = await client.get_tools()
+        agent = create_agent(model="deepseek:deepseek-chat", tools=tools, system_prompt=SYSTEM_PROMPT)
+        result = await agent.ainvoke({"messages": [{"role": "user", "content": message}]})
+        last_msg = result["messages"][-1]
+        if isinstance(last_msg.content, str):
+            answer = last_msg.content.strip()
+        else:
+            answer = str(last_msg.content).strip()
+    except Exception as err:
+        answer = f"⚠️ Error: {str(err)}\n\nPlease ensure your DEEPSEEK_API_KEY is set correctly in .env."
 
-    history = history + [
-        {"role": "user", "content": message},
-        {"role": "assistant", "content": answer},
-    ]
+    history.append((message, answer))
     return "", history, tools_panel(tools)
 
 
@@ -178,7 +190,7 @@ async def run_selftest():
     prompt = "Lookup PNR AI9482. Flight AI-101 is cancelled. Recommend alternative flights and issue interline ticket."
     _, history, _ = await on_message(prompt, [], all_servers)
     print("[TEST] Agent Answer:")
-    safe_answer = history[-1]["content"].encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
+    safe_answer = history[-1][1].encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
     print(safe_answer)
     print("[TEST] Self-Test Completed Successfully!")
 
