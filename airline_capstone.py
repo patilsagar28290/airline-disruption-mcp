@@ -114,8 +114,7 @@ async def on_message(message, history, selected):
         history = []
 
     if not selected:
-        history.append({"role": "user", "content": message})
-        history.append({"role": "assistant", "content": "⚠️ No MCP servers are plugged in. Please check at least one server on the left panel to provide tools to the agent."})
+        history.append((message, "⚠️ No MCP servers are plugged in. Please check at least one server on the left panel to provide tools to the agent."))
         return "", history, tools_panel([])
 
     tools = await discover(selected)
@@ -128,10 +127,9 @@ async def on_message(message, history, selected):
         else:
             answer = str(last_msg.content).strip()
     except Exception as err:
-        answer = f"⚠️ Error: {str(err)}\n\nPlease ensure your DEEPSEEK_API_KEY is set correctly in .env."
+        answer = f"⚠️ Error: {str(err)}\n\nPlease ensure your DEEPSEEK_API_KEY is set correctly in environment variables."
 
-    history.append({"role": "user", "content": message})
-    history.append({"role": "assistant", "content": answer})
+    history.append((message, answer))
     return "", history, tools_panel(tools)
 
 
@@ -184,7 +182,7 @@ with gr.Blocks(title="✈️ Airline Disruption & Alliance Interline MCP Control
 
         # Right Panel: Agent Chatbot Interface
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(type="messages", height=500, label="🤖 Alliance Disruption Recovery AI Agent")
+            chatbot = gr.Chatbot(height=500, label="🤖 Alliance Disruption Recovery AI Agent")
             message = gr.Textbox(
                 placeholder="e.g. Lookup PNR AI9482 and find Star Alliance alternative flights to London Heathrow",
                 label="Your Message / Instruction to Agent",
@@ -211,7 +209,7 @@ async def run_selftest():
     prompt = "Lookup PNR AI9482. Flight AI-101 is cancelled. Recommend alternative flights and issue interline ticket."
     _, history, _ = await on_message(prompt, [], all_servers)
     print("[TEST] Agent Answer:")
-    safe_answer = history[-1]["content"].encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
+    safe_answer = history[-1][1].encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8')
     print(safe_answer)
     print("[TEST] Self-Test Completed Successfully!")
 
